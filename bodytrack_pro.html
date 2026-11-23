@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="it" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Meta tag per esperienza nativa su iPhone (Aggiungi alla schermata Home) -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BodyTrack Pro">
+    <meta name="theme-color" content="#0f172a">
+    
+    <title>BodyTrack Pro - Monitoraggio Peso & Composizione Corporea</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                    },
+                    colors: {
+                        ios: {
+                            blue: '#007AFF',
+                            green: '#34C759',
+                            orange: '#FF9500',
+                            red: '#FF3B30',
+                            purple: '#AF52DE',
+                            teal: '#5AC8FA',
+                            amber: '#F59E0B',
+                            bgLight: '#F2F2F7',
+                            cardLight: '#FFFFFF',
+                            bgDark: '#000000',
+                            cardDark: '#1C1C1E',
+                            elevatedDark: '#2C2C2E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Chart.js per i grafici interattivi -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body {
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+        
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .glass-header {
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+        }
+
+        .card-hover {
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+        }
+        .card-hover:active {
+            transform: scale(0.985);
+        }
+
+        @keyframes slideUpFade {
+            from { opacity: 0; transform: translate(-50%, 20px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+        .toast-enter {
+            animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="bg-ios-bgLight text-slate-900 dark:bg-ios-bgDark dark:text-slate-100 transition-colors duration-300 min-h-screen pb-10">
+
+    <!-- HEADER STICKY CON PULSANTE REGISTRA SEMPRE VISIBILE ANCHE SU MOBILE / GOOGLE SITES -->
+    <header class="sticky top-0 z-30 glass-header bg-white/85 dark:bg-ios-cardDark/85 border-b border-slate-200/70 dark:border-slate-800/80">
+        <div class="max-w-6xl mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-2">
+            <!-- Brand & Saluto -->
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20 shrink-0">
+                    <i data-lucide="activity" class="w-5 h-5"></i>
+                </div>
+                <div class="truncate">
+                    <div class="flex items-center gap-2">
+                        <h1 class="font-bold text-base sm:text-lg tracking-tight leading-none truncate">BodyTrack <span class="text-ios-blue">Pro</span></h1>
+                        <span class="hidden md:inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300">LAICA PS5014</span>
+                    </div>
+                    <p id="headerGreeting" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">Ciao, Riccardo</p>
+                </div>
+            </div>
+
+            <!-- Azioni Rapide Header -->
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <!-- Pulsante Nuova Misurazione SEMPRE visibile in alto (Mobile & Desktop) -->
+                <button onclick="openEntryModal()" class="flex items-center gap-1.5 bg-ios-blue hover:bg-blue-600 text-white font-semibold text-xs sm:text-sm px-3.5 sm:px-4 py-2.5 rounded-full shadow-sm shadow-blue-500/30 transition active:scale-95">
+                    <i data-lucide="plus" class="w-4 h-4 stroke-[2.5]"></i>
+                    <span>Registra</span>
+                    <span class="hidden sm:inline">Peso</span>
+                </button>
+
+                <!-- Pulsante Backup & Dati -->
+                <button onclick="openBackupModal()" title="Backup & Esportazione Dati" class="p-2 sm:p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-ios-elevatedDark dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition">
+                    <i data-lucide="database" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                </button>
+
+                <!-- Pulsante Profilo / Impostazioni -->
+                <button onclick="openProfileModal()" title="Profilo e Obiettivo" class="p-2 sm:p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-ios-elevatedDark dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition">
+                    <i data-lucide="user-cog" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                </button>
+
+                <!-- Toggle Dark Mode -->
+                <button onclick="toggleDarkMode()" title="Cambia Tema" class="p-2 sm:p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-ios-elevatedDark dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition">
+                    <i data-lucide="moon" class="w-4 h-4 sm:w-5 sm:h-5 block dark:hidden"></i>
+                    <i data-lucide="sun" class="w-4 h-4 sm:w-5 sm:h-5 hidden dark:block text-amber-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTENUTO PRINCIPALE -->
+    <main class="max-w-6xl mx-auto px-3 sm:px-6 pt-5 space-y-5">
+
+        <!-- BANNER OBIETTIVO PESO (OPZIONALE) -->
+        <div class="bg-white dark:bg-ios-cardDark rounded-3xl p-4 sm:p-5 shadow-sm border border-slate-200/50 dark:border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center justify-between sm:justify-start gap-3.5 w-full sm:w-auto">
+                <div class="flex items-center gap-3.5">
+                    <div class="w-11 h-11 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                        <i data-lucide="target" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Obiettivo Peso Corporeo</div>
+                        <div class="flex flex-wrap items-baseline gap-2 mt-0.5">
+                            <span id="bannerTargetWeight" class="text-lg sm:text-xl font-bold text-slate-800 dark:text-white">Non impostato</span>
+                            <span id="bannerDiffToTarget" class="hidden text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-600 dark:text-slate-300"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tasto rapido modifica obiettivo su mobile -->
+                <button onclick="openProfileModal()" class="sm:hidden text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-ios-elevatedDark text-slate-600 dark:text-slate-300 hover:text-ios-blue transition">
+                    Modifica
+                </button>
+            </div>
+            
+            <!-- Barra di avanzamento (Visibile solo se l'obiettivo è impostato) -->
+            <div id="goalProgressWrapper" class="hidden flex-1 max-w-md w-full">
+                <div class="flex justify-between text-xs text-slate-500 dark:text-slate-400 mb-1.5">
+                    <span id="progressStartLabel">Inizio: -- kg</span>
+                    <span id="progressPercentLabel" class="font-semibold text-ios-blue">0% completato</span>
+                    <span id="progressGoalLabel">Target: -- kg</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-100 dark:bg-ios-elevatedDark rounded-full overflow-hidden">
+                    <div id="goalProgressBar" class="h-full bg-gradient-to-r from-blue-500 to-emerald-400 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <!-- Messaggio discreto quando non impostato -->
+            <div id="goalUnsetAction" class="hidden sm:flex items-center gap-3">
+                <span class="text-xs text-slate-400">Modalità monitoraggio libero attiva</span>
+                <button onclick="openProfileModal()" class="text-xs font-semibold px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-ios-elevatedDark dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition">
+                    Imposta se vuoi
+                </button>
+            </div>
+        </div>
+
+        <!-- SCHEDE RIEPILOGATIVE (KPI GRID A 6 METRICHE INCLUSO METABOLISMO BASALE) -->
+        <section aria-label="Riepilogo metriche principali" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-3.5">
+            <!-- KPI 1: Ultimo Peso -->
+            <div class="col-span-2 sm:col-span-1 bg-white dark:bg-ios-cardDark rounded-3xl p-4 shadow-sm border border-slate-200/50 dark:border-slate-800/80 card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Peso</span>
+                    <span class="w-7 h-7 rounded-xl bg-blue-500/10 text-ios-blue flex items-center justify-center">
+                        <i data-lucide="scale" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span id="kpiWeight" class="text-2xl sm:text-3xl font-extrabold tracking-tight">--</span>
+                    <span class="text-xs font-medium text-slate-400">kg</span>
+                </div>
+                <div class="mt-2 flex flex-wrap items-center gap-1.5 text-xs">
+                    <span id="kpiWeightPrevBadge" class="font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500">--</span>
+                    <span id="kpiWeightTotalText" class="text-slate-400 text-[11px]">tot: --</span>
+                </div>
+            </div>
+
+            <!-- KPI 2: BMI -->
+            <div class="bg-white dark:bg-ios-cardDark rounded-3xl p-4 shadow-sm border border-slate-200/50 dark:border-slate-800/80 card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">BMI</span>
+                    <span class="w-7 h-7 rounded-xl bg-purple-500/10 text-ios-purple flex items-center justify-center">
+                        <i data-lucide="gauge" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span id="kpiBmi" class="text-2xl sm:text-3xl font-extrabold tracking-tight">--</span>
+                </div>
+                <div class="mt-2">
+                    <span id="kpiBmiBadge" class="inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500">In attesa</span>
+                </div>
+            </div>
+
+            <!-- KPI 3: Metabolismo Basale (NUOVO) -->
+            <div class="bg-white dark:bg-ios-cardDark rounded-3xl p-4 shadow-sm border border-slate-200/50 dark:border-slate-800/80 card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Metabolismo</span>
+                    <span class="w-7 h-7 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center">
+                        <i data-lucide="zap" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span id="kpiBmr" class="text-2xl sm:text-3xl font-extrabold tracking-tight">--</span>
+                    <span class="text-xs font-medium text-slate-400">kcal</span>
+                </div>
+                <div class="mt-2">
+                    <span id="kpiBmrDiff" class="text-xs text-slate-400">Var: --</span>
+                </div>
+            </div>
+
+            <!-- KPI 4: Massa Grassa -->
+            <div class="bg-white dark:bg-ios-cardDark rounded-3xl p-4 shadow-sm border border-slate-200/50 dark:border-slate-800/80 card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Grasso</span>
+                    <span class="w-7 h-7 rounded-xl bg-orange-500/10 text-ios-orange flex items-center justify-center">
+                        <i data-lucide="flame" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span id="kpiFat" class="text-2xl sm:text-3xl font-extrabold tracking-tight">--</span>
+                    <span class="text-xs font-medium text-slate-400">%</span>
+                </div>
+                <div class="mt-2">
+                    <span id="kpiFatDiff" class="text-xs text-slate-400">Var: --</span>
+                </div>
+            </div>
+
+            <!-- KPI 5: Massa Muscolare -->
+            <div class="bg-white dark:bg-ios-cardDark rounded-3xl p-4 shadow-sm border border-slate-200/50 dark:border-slate-800/80 card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Muscoli</span>
+                    <span class="w-7 h-7 rounded-xl bg-emerald-500/10 text-ios-green flex items-center justify-center">
+                        <i data-lucide="dumbbell" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span id="kpiMuscle" class="text-2xl sm:text-3xl font-extrabold tracking-tight">--</span>
+                    <span id="kpiMuscleUnit" class="text-xs font-medium text-slate-400">%</span>
+                </div>
+                <div class="mt-2">
+                    <span id="kpiMuscleSub" class="text-xs text-slate-400">Var: --</span>
+                </div>
+            </div>
+
+            <!-- KPI 6: Acqua Corporea & Ossa -->
+            <div class="bg-white dark:bg-ios-cardDark rounded-3xl p-4 shadow-sm border border-slate-200/50 dark:border-slate-800/80 card-hover">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Acqua</span>
+                    <span class="w-7 h-7 rounded-xl bg-cyan-500/10 text-ios-teal flex items-center justify-center">
+                        <i data-lucide="droplets" class="w-4 h-4"></i>
+                    </span>
+                </div>
+                <div class="flex items-baseline gap-1">
+                    <span id="kpiWater" class="text-2xl sm:text-3xl font-extrabold tracking-tight">--</span>
+                    <span class="text-xs font-medium text-slate-400">%</span>
+                </div>
+                <div class="mt-2">
+                    <span id="kpiBoneSub" class="text-xs text-slate-400">Ossa: -- kg</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEZIONE GRAFICO INTERATTIVO -->
+        <section class="bg-white dark:bg-ios-cardDark rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-200/50 dark:border-slate-800/80">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+                <div>
+                    <h2 class="text-lg font-bold tracking-tight">Andamento nel Tempo</h2>
+                    <p id="chartSubtitle" class="text-xs text-slate-500 dark:text-slate-400">Confronto con media mobile di tendenza</p>
+                </div>
+
+                <!-- Controlli Grafico: Selettore Metrica & Filtro Temporale -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- Selettore Metrica -->
+                    <div class="flex bg-slate-100 dark:bg-ios-elevatedDark p-1 rounded-2xl overflow-x-auto no-scrollbar max-w-full">
+                        <button onclick="setChartMetric('weight')" data-metric="weight" class="metric-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-white dark:bg-ios-cardDark text-ios-blue shadow-sm whitespace-nowrap">Peso</button>
+                        <button onclick="setChartMetric('bmr')" data-metric="bmr" class="metric-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300 whitespace-nowrap">Metabolismo</button>
+                        <button onclick="setChartMetric('fat')" data-metric="fat" class="metric-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300 whitespace-nowrap">Grasso %</button>
+                        <button onclick="setChartMetric('muscle')" data-metric="muscle" class="metric-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300 whitespace-nowrap">Muscoli</button>
+                        <button onclick="setChartMetric('water')" data-metric="water" class="metric-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300 whitespace-nowrap">Acqua %</button>
+                        <button onclick="setChartMetric('bmi')" data-metric="bmi" class="metric-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300 whitespace-nowrap">BMI</button>
+                    </div>
+
+                    <!-- Filtro Temporale -->
+                    <div class="flex bg-slate-100 dark:bg-ios-elevatedDark p-1 rounded-2xl">
+                        <button onclick="setChartRange('7d')" data-range="7d" class="range-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300">7G</button>
+                        <button onclick="setChartRange('30d')" data-range="30d" class="range-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold transition bg-white dark:bg-ios-cardDark text-slate-900 dark:text-white shadow-sm">30G</button>
+                        <button onclick="setChartRange('90d')" data-range="90d" class="range-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300">3M</button>
+                        <button onclick="setChartRange('all')" data-range="all" class="range-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300">Tutto</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="relative w-full h-64 sm:h-80">
+                <canvas id="mainChart"></canvas>
+                <!-- Empty State Grafico -->
+                <div id="chartEmptyState" class="hidden absolute inset-0 flex flex-col items-center justify-center text-center p-4 bg-slate-50/70 dark:bg-ios-elevatedDark/40 rounded-2xl">
+                    <i data-lucide="line-chart" class="w-10 h-10 text-slate-400 mb-2"></i>
+                    <p class="text-sm font-semibold text-slate-600 dark:text-slate-300">Nessun dato disponibile per questo periodo</p>
+                    <p class="text-xs text-slate-400 mt-1">Tocca "+ Registra" in alto per inserire la tua misurazione.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEZIONE STORICO MISURAZIONI -->
+        <section class="bg-white dark:bg-ios-cardDark rounded-3xl p-4 sm:p-6 shadow-sm border border-slate-200/50 dark:border-slate-800/80">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                <div>
+                    <h2 class="text-lg font-bold tracking-tight">Storico Misurazioni</h2>
+                    <p id="historyCountLabel" class="text-xs text-slate-500 dark:text-slate-400">0 misurazioni registrate</p>
+                </div>
+
+                <!-- Azioni Rapide Storico -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="loadDemoData()" class="text-xs font-semibold px-3 py-2 rounded-xl bg-blue-50 text-ios-blue hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 transition flex items-center gap-1.5">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                        <span>Carica Dati Demo</span>
+                    </button>
+                    <button onclick="openConfirmClearModal()" class="text-xs font-semibold px-3 py-2 rounded-xl bg-red-50 text-ios-red hover:bg-red-100 dark:bg-red-950/50 dark:hover:bg-red-900/50 transition flex items-center gap-1.5">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Azzera Tutto</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista / Tabella Responsive -->
+            <div id="historyContainer" class="space-y-3">
+                <!-- Popolato dinamicamente via JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ===================================================================== -->
+    <!-- MODALE 1: INSERIMENTO / MODIFICA MISURAZIONE (CON METABOLISMO KCAL)   -->
+    <!-- ===================================================================== -->
+    <div id="entryModal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-0 sm:p-4">
+        <div class="bg-white dark:bg-ios-cardDark w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800 max-h-[92vh] flex flex-col overflow-hidden">
+            <!-- Header Modale -->
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
+                <div>
+                    <h3 id="entryModalTitle" class="text-lg font-bold">Nuova Misurazione</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Inserisci i valori dal display della bilancia</p>
+                </div>
+                <button onclick="closeEntryModal()" class="p-2 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500 hover:text-slate-800 dark:hover:text-white transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Form Scorrevole -->
+            <form id="entryForm" onsubmit="saveEntry(event)" class="p-5 sm:p-6 overflow-y-auto space-y-4">
+                <input type="hidden" id="entryId">
+
+                <!-- Data e Ora -->
+                <div>
+                    <label for="entryDate" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Data e Ora</label>
+                    <input type="datetime-local" id="entryDate" required class="w-full px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark border border-transparent focus:border-ios-blue focus:bg-white dark:focus:bg-slate-900 outline-none text-sm font-medium transition">
+                </div>
+
+                <!-- Peso + Anteprima BMI in tempo reale -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="entryWeight" class="block text-xs font-semibold uppercase tracking-wider text-ios-blue mb-1.5">Peso Corporeo (kg) *</label>
+                        <input type="number" id="entryWeight" step="0.1" min="20" max="300" required placeholder="es. 76.4" oninput="updateLiveBmiPreview()" class="w-full px-4 py-2.5 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/60 focus:border-ios-blue outline-none text-lg font-bold text-slate-900 dark:text-white transition">
+                    </div>
+
+                    <!-- Box Calcolo BMI Live -->
+                    <div class="rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark p-3 flex flex-col justify-center">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">BMI Stimato</span>
+                            <span id="liveBmiCategory" class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">--</span>
+                        </div>
+                        <div class="mt-1 flex items-baseline gap-1.5">
+                            <span id="liveBmiValue" class="text-2xl font-extrabold text-slate-800 dark:text-white">--.-</span>
+                            <span id="liveBmiHeightRef" class="text-xs text-slate-400">su 172 cm</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Griglia Parametri Impedenziometrici (incluso Metabolismo kcal) -->
+                <div class="grid grid-cols-2 gap-3 pt-1">
+                    <!-- Metabolismo Basale (kcal) -->
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="entryBmr" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Metabolismo (kcal)</label>
+                        <div class="relative">
+                            <input type="number" id="entryBmr" step="1" min="500" max="6000" placeholder="es. 1680" class="w-full px-4 py-2.5 pr-12 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark border border-transparent focus:border-amber-500 outline-none text-sm font-semibold">
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">kcal</span>
+                        </div>
+                    </div>
+
+                    <!-- Massa Grassa % -->
+                    <div class="col-span-2 sm:col-span-1">
+                        <label for="entryFat" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Massa Grassa (%)</label>
+                        <div class="relative">
+                            <input type="number" id="entryFat" step="0.1" min="2" max="70" placeholder="es. 18.5" class="w-full px-4 py-2.5 pr-9 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark border border-transparent focus:border-ios-orange outline-none text-sm font-semibold">
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+                        </div>
+                    </div>
+
+                    <!-- Acqua Corporea % -->
+                    <div>
+                        <label for="entryWater" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Acqua Corporea (%)</label>
+                        <div class="relative">
+                            <input type="number" id="entryWater" step="0.1" min="20" max="85" placeholder="es. 58.2" class="w-full px-4 py-2.5 pr-9 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark border border-transparent focus:border-ios-teal outline-none text-sm font-semibold">
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+                        </div>
+                    </div>
+
+                    <!-- Massa Muscolare (con selettore % o kg) -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label for="entryMuscle" class="text-xs font-semibold text-slate-600 dark:text-slate-300">Muscoli</label>
+                            <div class="flex bg-slate-200 dark:bg-slate-700 rounded-lg p-0.5 text-[10px] font-bold">
+                                <button type="button" id="unitBtnPercent" onclick="setMuscleInputUnit('%')" class="px-1.5 py-0.5 rounded bg-white dark:bg-ios-cardDark text-ios-green shadow-xs">%</button>
+                                <button type="button" id="unitBtnKg" onclick="setMuscleInputUnit('kg')" class="px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-300">kg</button>
+                            </div>
+                        </div>
+                        <div class="relative">
+                            <input type="number" id="entryMuscle" step="0.1" min="10" max="150" placeholder="es. 41.0" class="w-full px-4 py-2.5 pr-9 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark border border-transparent focus:border-ios-green outline-none text-sm font-semibold">
+                            <span id="muscleInputUnitLabel" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">%</span>
+                        </div>
+                    </div>
+
+                    <!-- Massa Ossea (kg) -->
+                    <div class="col-span-2">
+                        <label for="entryBone" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Massa Ossea (kg)</label>
+                        <div class="relative">
+                            <input type="number" id="entryBone" step="0.1" min="0.5" max="15" placeholder="es. 3.1" class="w-full px-4 py-2.5 pr-9 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark border border-transparent focus:border-ios-purple outline-none text-sm font-semibold">
+                            <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">kg</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Note Opzionali + Tag Rapidi -->
+                <div>
+                    <label for="entryNotes" class="block text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1.5">Note (opzionale)</label>
+                    <input type="text" id="entryNotes" placeholder="es. A digiuno appena sveglio..." class="w-full px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark border border-transparent focus:border-ios-blue outline-none text-sm">
+                    <div class="flex flex-wrap gap-1.5 mt-2">
+                        <button type="button" onclick="appendNoteTag('A digiuno')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-ios-elevatedDark dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+ A digiuno</button>
+                        <button type="button" onclick="appendNoteTag('Mattina')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-ios-elevatedDark dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+ Mattina</button>
+                        <button type="button" onclick="appendNoteTag('Post-allenamento')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-ios-elevatedDark dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+ Post-allenamento</button>
+                        <button type="button" onclick="appendNoteTag('Sera')" class="text-[11px] px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-ios-elevatedDark dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">+ Sera</button>
+                    </div>
+                </div>
+
+                <!-- Pulsanti Azione -->
+                <div class="pt-3 flex items-center gap-3">
+                    <button type="button" onclick="closeEntryModal()" class="flex-1 py-3 rounded-2xl font-semibold text-sm bg-slate-100 dark:bg-ios-elevatedDark text-slate-700 dark:text-slate-300 hover:bg-slate-200 transition">Annulla</button>
+                    <button type="submit" class="flex-1 py-3 rounded-2xl font-semibold text-sm bg-ios-blue hover:bg-blue-600 text-white shadow-md shadow-blue-500/25 transition">Salva Misurazione</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODALE 2: PROFILO UTENTE E OBIETTIVO OPZIONALE                        -->
+    <!-- ===================================================================== -->
+    <div id="profileModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-ios-cardDark w-full max-w-md rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <h3 class="text-lg font-bold">Profilo & Impostazioni</h3>
+                <button onclick="closeProfileModal()" class="p-2 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="saveProfile(event)" class="p-6 space-y-4">
+                <div>
+                    <label for="profileName" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Il tuo Nome</label>
+                    <input type="text" id="profileName" required class="w-full px-4 py-3 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark outline-none text-sm font-semibold focus:ring-2 focus:ring-ios-blue">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label for="profileHeight" class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Altezza (cm)</label>
+                        <input type="number" id="profileHeight" min="100" max="240" required class="w-full px-4 py-3 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark outline-none text-sm font-semibold focus:ring-2 focus:ring-ios-blue">
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label for="profileTargetWeight" class="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Obiettivo (kg)</label>
+                            <button type="button" onclick="clearTargetWeightInput()" class="text-[11px] font-semibold text-ios-red hover:underline">Rimuovi</button>
+                        </div>
+                        <input type="number" id="profileTargetWeight" step="0.1" min="30" max="250" placeholder="Non impostato" class="w-full px-4 py-3 rounded-2xl bg-slate-100 dark:bg-ios-elevatedDark outline-none text-sm font-semibold focus:ring-2 focus:ring-ios-blue">
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-ios-elevatedDark/60 p-3 rounded-2xl">
+                    Puoi lasciare vuoto il campo <strong>Obiettivo (kg)</strong> se desideri monitorare liberamente i tuoi progressi senza traguardi fissi.
+                </p>
+                <div class="pt-2 flex gap-3">
+                    <button type="button" onclick="closeProfileModal()" class="flex-1 py-3 rounded-2xl font-semibold text-sm bg-slate-100 dark:bg-ios-elevatedDark text-slate-700 dark:text-slate-300">Annulla</button>
+                    <button type="submit" class="flex-1 py-3 rounded-2xl font-semibold text-sm bg-ios-blue text-white shadow-md shadow-blue-500/25">Salva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODALE 3: BACKUP, ESPORTAZIONE E IMPORTAZIONE DATI                    -->
+    <!-- ===================================================================== -->
+    <div id="backupModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-ios-cardDark w-full max-w-md rounded-3xl shadow-2xl border border-slate-200/60 dark:border-slate-800 overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                    <h3 class="text-lg font-bold">Backup & Trasferimento Dati</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Sincronizza manualmente tra iPhone e Mac</p>
+                </div>
+                <button onclick="closeBackupModal()" class="p-2 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-5">
+                <div class="space-y-2.5">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Esporta i tuoi dati</h4>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="exportJSON()" class="flex flex-col items-center justify-center gap-1.5 p-4 rounded-2xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-ios-blue border border-blue-200/60 dark:border-blue-800/50 transition">
+                            <i data-lucide="file-json" class="w-6 h-6"></i>
+                            <span class="text-xs font-bold">Backup JSON</span>
+                            <span class="text-[10px] opacity-75">Completo + Profilo</span>
+                        </button>
+                        <button onclick="exportCSV()" class="flex flex-col items-center justify-center gap-1.5 p-4 rounded-2xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-ios-green border border-emerald-200/60 dark:border-emerald-800/50 transition">
+                            <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+                            <span class="text-xs font-bold">Esporta CSV</span>
+                            <span class="text-[10px] opacity-75">Per Excel / Numbers</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Ripristina da Backup (JSON)</h4>
+                    <label class="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-ios-blue dark:hover:border-ios-blue cursor-pointer bg-slate-50/50 dark:bg-ios-elevatedDark/40 transition">
+                        <i data-lucide="upload-cloud" class="w-7 h-7 text-ios-blue"></i>
+                        <span class="text-xs font-semibold text-slate-700 dark:text-slate-200">Seleziona file .json di BodyTrack Pro</span>
+                        <span class="text-[11px] text-slate-400 text-center">I dati importati verranno uniti o aggiornati in sicurezza</span>
+                        <input type="file" id="importJsonInput" accept=".json,application/json" onchange="importJSON(event)" class="hidden">
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- MODALE 4: CONFERMA PERSONALIZZATA (NO ALERT/CONFIRM NATIVI)           -->
+    <!-- ===================================================================== -->
+    <div id="confirmModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-ios-cardDark w-full max-w-sm rounded-3xl p-6 shadow-2xl border border-slate-200/60 dark:border-slate-800 text-center space-y-4">
+            <div class="w-12 h-12 rounded-full bg-red-100 dark:bg-red-950/60 text-ios-red flex items-center justify-center mx-auto">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <div>
+                <h3 id="confirmModalTitle" class="text-lg font-bold">Sei sicuro?</h3>
+                <p id="confirmModalDesc" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Questa azione non può essere annullata.</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-2xl font-semibold text-sm bg-slate-100 dark:bg-ios-elevatedDark text-slate-700 dark:text-slate-300">Annulla</button>
+                <button id="confirmModalActionBtn" class="flex-1 py-2.5 rounded-2xl font-semibold text-sm bg-ios-red text-white shadow-md shadow-red-500/25">Conferma</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICHE -->
+    <div id="toastContainer" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none"></div>
+
+    <!-- ===================================================================== -->
+    <!-- LOGICA JAVASCRIPT APPLICATIVA                                         -->
+    <!-- ===================================================================== -->
+    <script>
+        const STORAGE_KEYS = {
+            ENTRIES: 'bodytrack_pro_entries_v1',
+            PROFILE: 'bodytrack_pro_profile_v1',
+            THEME: 'bodytrack_pro_theme_v1'
+        };
+
+        // Stato Applicazione: targetWeight è null (opzionale) per default
+        let appState = {
+            profile: {
+                name: 'Riccardo',
+                height: 172,
+                targetWeight: null
+            },
+            entries: [],
+            chartMetric: 'weight', // 'weight', 'bmr', 'fat', 'muscle', 'water', 'bmi'
+            chartRange: '30d',     // '7d', '30d', '90d', 'all'
+            muscleInputUnit: '%'
+        };
+
+        let chartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadFromStorage();
+            lucide.createIcons();
+            renderAll();
+        });
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME);
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.setItem(STORAGE_KEYS.THEME, isDark ? 'dark' : 'light');
+            renderChart();
+        }
+
+        function loadFromStorage() {
+            try {
+                const rawProfile = localStorage.getItem(STORAGE_KEYS.PROFILE);
+                if (rawProfile) {
+                    const parsedProfile = JSON.parse(rawProfile);
+                    appState.profile = {
+                        ...appState.profile,
+                        ...parsedProfile,
+                        targetWeight: (parsedProfile.targetWeight !== undefined && parsedProfile.targetWeight !== '' && parsedProfile.targetWeight !== null)
+                            ? Number(parsedProfile.targetWeight)
+                            : null
+                    };
+                }
+
+                const rawEntries = localStorage.getItem(STORAGE_KEYS.ENTRIES);
+                if (rawEntries) {
+                    appState.entries = JSON.parse(rawEntries);
+                    sortEntriesDesc();
+                }
+            } catch (e) {
+                console.error('Errore nel caricamento dati:', e);
+                showToast('Errore nel caricamento dei dati salvati', 'error');
+            }
+        }
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(appState.profile));
+                localStorage.setItem(STORAGE_KEYS.ENTRIES, JSON.stringify(appState.entries));
+            } catch (e) {
+                console.error('Errore nel salvataggio:', e);
+                showToast('Spazio di archiviazione esaurito o bloccato', 'error');
+            }
+        }
+
+        function sortEntriesDesc() {
+            appState.entries.sort((a, b) => new Date(b.date) - new Date(a.date));
+        }
+
+        // =====================================================================
+        // CALCOLI METRICHE E BMI
+        // =====================================================================
+        function calculateBMI(weightKg, heightCm) {
+            if (!weightKg || !heightCm || heightCm <= 0) return null;
+            const heightM = heightCm / 100;
+            return +(weightKg / (heightM * heightM)).toFixed(1);
+        }
+
+        function getBMICategory(bmi) {
+            if (bmi === null || isNaN(bmi)) {
+                return { label: 'N/D', classes: 'bg-slate-100 dark:bg-ios-elevatedDark text-slate-500' };
+            }
+            if (bmi < 18.5) {
+                return { label: 'Sottopeso', classes: 'bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300' };
+            }
+            if (bmi < 25.0) {
+                return { label: 'Normopeso', classes: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' };
+            }
+            if (bmi < 30.0) {
+                return { label: 'Sovrappeso', classes: 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300' };
+            }
+            return { label: 'Obesità', classes: 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300' };
+        }
+
+        // =====================================================================
+        // RENDERING COMPLETO INTERFACCIA
+        // =====================================================================
+        function renderAll() {
+            sortEntriesDesc();
+            renderHeaderAndBanner();
+            renderKPIs();
+            renderChart();
+            renderHistory();
+            lucide.createIcons();
+        }
+
+        function renderHeaderAndBanner() {
+            const { name, targetWeight } = appState.profile;
+            document.getElementById('headerGreeting').textContent = `Ciao, ${name}`;
+
+            const bannerTargetEl = document.getElementById('bannerTargetWeight');
+            const diffBadge = document.getElementById('bannerDiffToTarget');
+            const progressWrapper = document.getElementById('goalProgressWrapper');
+            const unsetAction = document.getElementById('goalUnsetAction');
+            const progressBar = document.getElementById('goalProgressBar');
+            const progressStartLabel = document.getElementById('progressStartLabel');
+            const progressPercentLabel = document.getElementById('progressPercentLabel');
+            const progressGoalLabel = document.getElementById('progressGoalLabel');
+
+            const hasGoal = targetWeight !== null && targetWeight !== undefined && !isNaN(targetWeight) && targetWeight > 0;
+
+            if (!hasGoal) {
+                bannerTargetEl.textContent = 'Non impostato';
+                bannerTargetEl.className = 'text-base sm:text-lg font-bold text-slate-400 dark:text-slate-500';
+                diffBadge.classList.add('hidden');
+                progressWrapper.classList.add('hidden');
+                unsetAction.classList.remove('hidden');
+                unsetAction.classList.add('hidden', 'sm:flex');
+                return;
+            }
+
+            // Obiettivo impostato
+            bannerTargetEl.textContent = `${Number(targetWeight).toFixed(1)} kg`;
+            bannerTargetEl.className = 'text-lg sm:text-xl font-bold text-slate-800 dark:text-white';
+            unsetAction.classList.add('hidden');
+            unsetAction.classList.remove('sm:flex');
+            diffBadge.classList.remove('hidden');
+            progressWrapper.classList.remove('hidden');
+            progressGoalLabel.textContent = `Target: ${Number(targetWeight).toFixed(1)} kg`;
+
+            if (appState.entries.length === 0) {
+                diffBadge.textContent = 'In attesa prima pesata';
+                diffBadge.className = 'text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500';
+                progressStartLabel.textContent = 'Inizio: -- kg';
+                progressPercentLabel.textContent = '0%';
+                progressBar.style.width = '0%';
+                return;
+            }
+
+            const latest = appState.entries[0];
+            const oldest = appState.entries[appState.entries.length - 1];
+            const diff = +(latest.weight - targetWeight).toFixed(1);
+
+            if (Math.abs(diff) <= 0.1) {
+                diffBadge.textContent = 'Obiettivo raggiunto! 🎉';
+                diffBadge.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+            } else if (diff > 0) {
+                diffBadge.textContent = `-${diff.toFixed(1)} kg all'obiettivo`;
+                diffBadge.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
+            } else {
+                diffBadge.textContent = `+${Math.abs(diff).toFixed(1)} kg all'obiettivo`;
+                diffBadge.className = 'text-xs font-semibold px-2.5 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300';
+            }
+
+            progressStartLabel.textContent = `Inizio: ${oldest.weight.toFixed(1)} kg`;
+            const totalDistance = Math.abs(oldest.weight - targetWeight);
+            let pct = 0;
+            if (totalDistance === 0) {
+                pct = 100;
+            } else {
+                const covered = Math.abs(oldest.weight - latest.weight);
+                const goingRightWay = (oldest.weight > targetWeight && latest.weight <= oldest.weight) ||
+                                      (oldest.weight < targetWeight && latest.weight >= oldest.weight);
+                pct = goingRightWay ? Math.min(100, Math.max(0, Math.round((covered / totalDistance) * 100))) : 0;
+            }
+            progressPercentLabel.textContent = `${pct}% completato`;
+            progressBar.style.width = `${pct}%`;
+        }
+
+        function renderKPIs() {
+            const kpiWeight = document.getElementById('kpiWeight');
+            const kpiWeightPrevBadge = document.getElementById('kpiWeightPrevBadge');
+            const kpiWeightTotalText = document.getElementById('kpiWeightTotalText');
+            const kpiBmi = document.getElementById('kpiBmi');
+            const kpiBmiBadge = document.getElementById('kpiBmiBadge');
+            const kpiBmr = document.getElementById('kpiBmr');
+            const kpiBmrDiff = document.getElementById('kpiBmrDiff');
+            const kpiFat = document.getElementById('kpiFat');
+            const kpiFatDiff = document.getElementById('kpiFatDiff');
+            const kpiMuscle = document.getElementById('kpiMuscle');
+            const kpiMuscleUnit = document.getElementById('kpiMuscleUnit');
+            const kpiMuscleSub = document.getElementById('kpiMuscleSub');
+            const kpiWater = document.getElementById('kpiWater');
+            const kpiBoneSub = document.getElementById('kpiBoneSub');
+
+            if (appState.entries.length === 0) {
+                kpiWeight.textContent = '--';
+                kpiWeightPrevBadge.textContent = '--';
+                kpiWeightPrevBadge.className = 'font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500';
+                kpiWeightTotalText.textContent = 'tot: --';
+                kpiBmi.textContent = '--';
+                kpiBmiBadge.textContent = 'In attesa';
+                kpiBmiBadge.className = 'inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500';
+                kpiBmr.textContent = '--';
+                kpiBmrDiff.textContent = 'Var: --';
+                kpiFat.textContent = '--';
+                kpiFatDiff.textContent = 'Var: --';
+                kpiMuscle.textContent = '--';
+                kpiMuscleSub.textContent = 'Var: --';
+                kpiWater.textContent = '--';
+                kpiBoneSub.textContent = 'Ossa: -- kg';
+                return;
+            }
+
+            const latest = appState.entries[0];
+            const prev = appState.entries[1] || null;
+            const oldest = appState.entries[appState.entries.length - 1];
+
+            // 1. Peso
+            kpiWeight.textContent = latest.weight.toFixed(1);
+            if (prev) {
+                const diffPrev = +(latest.weight - prev.weight).toFixed(1);
+                const sign = diffPrev > 0 ? '+' : '';
+                kpiWeightPrevBadge.textContent = `${sign}${diffPrev.toFixed(1)} kg`;
+                if (diffPrev < 0) {
+                    kpiWeightPrevBadge.className = 'font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300';
+                } else if (diffPrev > 0) {
+                    kpiWeightPrevBadge.className = 'font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300';
+                } else {
+                    kpiWeightPrevBadge.className = 'font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500';
+                }
+            } else {
+                kpiWeightPrevBadge.textContent = 'Prima pesata';
+                kpiWeightPrevBadge.className = 'font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300';
+            }
+
+            const diffStart = +(latest.weight - oldest.weight).toFixed(1);
+            const signStart = diffStart > 0 ? '+' : '';
+            kpiWeightTotalText.textContent = `tot: ${signStart}${diffStart.toFixed(1)} kg`;
+
+            // 2. BMI
+            const bmi = calculateBMI(latest.weight, appState.profile.height);
+            const bmiCat = getBMICategory(bmi);
+            kpiBmi.textContent = bmi ? bmi.toFixed(1) : '--';
+            kpiBmiBadge.textContent = bmiCat.label;
+            kpiBmiBadge.className = `inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full ${bmiCat.classes}`;
+
+            // 3. Metabolismo Basale (kcal)
+            if (latest.bmr !== null && latest.bmr !== undefined && latest.bmr !== '') {
+                kpiBmr.textContent = Math.round(Number(latest.bmr));
+                const prevBmrEntry = appState.entries.slice(1).find(e => e.bmr !== null && e.bmr !== undefined && e.bmr !== '');
+                if (prevBmrEntry) {
+                    const dBmr = Math.round(latest.bmr - prevBmrEntry.bmr);
+                    kpiBmrDiff.textContent = `Var: ${dBmr > 0 ? '+' : ''}${dBmr} kcal`;
+                } else {
+                    kpiBmrDiff.textContent = 'Prima rilevazione';
+                }
+            } else {
+                kpiBmr.textContent = '--';
+                kpiBmrDiff.textContent = 'Non rilevato';
+            }
+
+            // 4. Massa Grassa
+            if (latest.fat !== null && latest.fat !== undefined && latest.fat !== '') {
+                kpiFat.textContent = Number(latest.fat).toFixed(1);
+                const prevFatEntry = appState.entries.slice(1).find(e => e.fat !== null && e.fat !== undefined && e.fat !== '');
+                if (prevFatEntry) {
+                    const dFat = +(latest.fat - prevFatEntry.fat).toFixed(1);
+                    kpiFatDiff.textContent = `Var: ${dFat > 0 ? '+' : ''}${dFat.toFixed(1)}%`;
+                } else {
+                    kpiFatDiff.textContent = 'Prima rilevazione';
+                }
+            } else {
+                kpiFat.textContent = '--';
+                kpiFatDiff.textContent = 'Non rilevata';
+            }
+
+            // 5. Massa Muscolare
+            if (latest.muscle !== null && latest.muscle !== undefined && latest.muscle !== '') {
+                const mUnit = latest.muscleUnit || '%';
+                kpiMuscle.textContent = Number(latest.muscle).toFixed(1);
+                kpiMuscleUnit.textContent = mUnit;
+                const prevMuscleEntry = appState.entries.slice(1).find(e => e.muscle !== null && e.muscle !== undefined && e.muscle !== '' && (e.muscleUnit || '%') === mUnit);
+                if (prevMuscleEntry) {
+                    const dMus = +(latest.muscle - prevMuscleEntry.muscle).toFixed(1);
+                    kpiMuscleSub.textContent = `Var: ${dMus > 0 ? '+' : ''}${dMus.toFixed(1)}${mUnit}`;
+                } else {
+                    kpiMuscleSub.textContent = `Unità: ${mUnit}`;
+                }
+            } else {
+                kpiMuscle.textContent = '--';
+                kpiMuscleUnit.textContent = '%';
+                kpiMuscleSub.textContent = 'Non rilevata';
+            }
+
+            // 6. Acqua & Ossa
+            if (latest.water !== null && latest.water !== undefined && latest.water !== '') {
+                kpiWater.textContent = Number(latest.water).toFixed(1);
+            } else {
+                kpiWater.textContent = '--';
+            }
+
+            if (latest.bone !== null && latest.bone !== undefined && latest.bone !== '') {
+                kpiBoneSub.textContent = `Ossa: ${Number(latest.bone).toFixed(1)} kg`;
+            } else {
+                kpiBoneSub.textContent = 'Ossa: -- kg';
+            }
+        }
+
+        // =====================================================================
+        // GRAFICO INTERATTIVO (CHART.JS)
+        // =====================================================================
+        function setChartMetric(metric) {
+            appState.chartMetric = metric;
+            document.querySelectorAll('.metric-btn').forEach(btn => {
+                if (btn.dataset.metric === metric) {
+                    btn.className = 'metric-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition bg-white dark:bg-ios-cardDark text-ios-blue shadow-sm whitespace-nowrap';
+                } else {
+                    btn.className = 'metric-btn px-3 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap';
+                }
+            });
+            renderChart();
+        }
+
+        function setChartRange(range) {
+            appState.chartRange = range;
+            document.querySelectorAll('.range-btn').forEach(btn => {
+                if (btn.dataset.range === range) {
+                    btn.className = 'range-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold transition bg-white dark:bg-ios-cardDark text-slate-900 dark:text-white shadow-sm';
+                } else {
+                    btn.className = 'range-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold transition text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white';
+                }
+            });
+            renderChart();
+        }
+
+        function renderChart() {
+            const canvas = document.getElementById('mainChart');
+            const emptyState = document.getElementById('chartEmptyState');
+            const subtitle = document.getElementById('chartSubtitle');
+
+            const now = new Date();
+            let filtered = [...appState.entries].reverse();
+
+            if (appState.chartRange !== 'all') {
+                const daysMap = { '7d': 7, '30d': 30, '90d': 90 };
+                const days = daysMap[appState.chartRange];
+                const cutoff = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+                filtered = filtered.filter(item => new Date(item.date) >= cutoff);
+            }
+
+            const metricConfig = {
+                weight: { label: 'Peso Corporeo (kg)',       color: '#007AFF', bg: 'rgba(0, 122, 255, 0.12)', unit: 'kg' },
+                bmr:    { label: 'Metabolismo Basale (kcal)', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)', unit: 'kcal' },
+                fat:    { label: 'Massa Grassa (%)',         color: '#FF9500', bg: 'rgba(255, 149, 0, 0.12)', unit: '%' },
+                muscle: { label: 'Massa Muscolare',          color: '#34C759', bg: 'rgba(52, 199, 89, 0.12)', unit: '' },
+                water:  { label: 'Acqua Corporea (%)',       color: '#5AC8FA', bg: 'rgba(90, 200, 250, 0.12)', unit: '%' },
+                bmi:    { label: 'Indice BMI',               color: '#AF52DE', bg: 'rgba(175, 82, 222, 0.12)', unit: '' }
+            };
+
+            const cfg = metricConfig[appState.chartMetric];
+
+            const validPoints = filtered.map(entry => {
+                let val = null;
+                if (appState.chartMetric === 'weight') val = entry.weight;
+                else if (appState.chartMetric === 'bmr') val = entry.bmr;
+                else if (appState.chartMetric === 'fat') val = entry.fat;
+                else if (appState.chartMetric === 'muscle') val = entry.muscle;
+                else if (appState.chartMetric === 'water') val = entry.water;
+                else if (appState.chartMetric === 'bmi') val = calculateBMI(entry.weight, appState.profile.height);
+
+                return {
+                    date: entry.date,
+                    value: (val !== null && val !== undefined && val !== '') ? Number(val) : null
+                };
+            }).filter(p => p.value !== null);
+
+            if (validPoints.length === 0) {
+                emptyState.classList.remove('hidden');
+                if (chartInstance) {
+                    chartInstance.destroy();
+                    chartInstance = null;
+                }
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            const labels = validPoints.map(p => {
+                const d = new Date(p.date);
+                return d.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+            });
+
+            const dataValues = validPoints.map(p => p.value);
+
+            const movingAvg = dataValues.map((_, idx, arr) => {
+                const start = Math.max(0, idx - 2);
+                const subset = arr.slice(start, idx + 1);
+                const sum = subset.reduce((acc, v) => acc + v, 0);
+                return +(sum / subset.length).toFixed(2);
+            });
+
+            const datasets = [
+                {
+                    label: cfg.label,
+                    data: dataValues,
+                    borderColor: cfg.color,
+                    backgroundColor: cfg.bg,
+                    borderWidth: 3,
+                    pointBackgroundColor: cfg.color,
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.35,
+                    fill: true
+                },
+                {
+                    label: 'Media Mobile (Trend)',
+                    data: movingAvg,
+                    borderColor: '#94a3b8',
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    tension: 0.4,
+                    fill: false
+                }
+            ];
+
+            const hasGoal = appState.profile.targetWeight !== null && appState.profile.targetWeight !== undefined && !isNaN(appState.profile.targetWeight) && appState.profile.targetWeight > 0;
+
+            if (appState.chartMetric === 'weight' && hasGoal) {
+                subtitle.textContent = `Linea continua: Peso • Tratteggiata grigia: Trend • Verde: Obiettivo (${appState.profile.targetWeight} kg)`;
+                datasets.push({
+                    label: `Obiettivo (${appState.profile.targetWeight} kg)`,
+                    data: Array(dataValues.length).fill(Number(appState.profile.targetWeight)),
+                    borderColor: '#34C759',
+                    borderWidth: 2,
+                    borderDash: [8, 4],
+                    pointRadius: 0,
+                    pointHoverRadius: 0,
+                    fill: false
+                });
+            } else {
+                subtitle.textContent = `Andamento ${cfg.label} con media mobile di tendenza`;
+            }
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)';
+            const textColor = isDark ? '#94a3b8' : '#64748b';
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(canvas.getContext('2d'), {
+                type: 'line',
+                data: { labels, datasets },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom',
+                            labels: {
+                                color: textColor,
+                                usePointStyle: true,
+                                boxWidth: 8,
+                                font: { family: 'Inter', size: 11, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: isDark ? '#1C1C1E' : '#0f172a',
+                            titleColor: '#f8fafc',
+                            bodyColor: '#e2e8f0',
+                            padding: 12,
+                            cornerRadius: 12,
+                            displayColors: true
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: textColor, font: { family: 'Inter', size: 11 } }
+                        },
+                        y: {
+                            grid: { color: gridColor },
+                            ticks: { color: textColor, font: { family: 'Inter', size: 11 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // =====================================================================
+        // RENDERING STORICO MISURAZIONI
+        // =====================================================================
+        function renderHistory() {
+            const container = document.getElementById('historyContainer');
+            const countLabel = document.getElementById('historyCountLabel');
+            countLabel.textContent = `${appState.entries.length} misurazioni registrate`;
+
+            if (appState.entries.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10 px-4 rounded-2xl bg-slate-50 dark:bg-ios-elevatedDark/40 border border-dashed border-slate-200 dark:border-slate-800">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-ios-blue flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="clipboard-list" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="text-sm font-bold text-slate-700 dark:text-slate-200">Nessuna misurazione presente</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
+                            Salva la tua prima pesata cliccando sul pulsante blu <strong>"+ Registra"</strong> in alto a destra oppure carica i dati demo.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = appState.entries.map((entry, index) => {
+                const prevEntry = appState.entries[index + 1] || null;
+                const d = new Date(entry.date);
+                const formattedDate = d.toLocaleDateString('it-IT', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+                const formattedTime = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+
+                let diffHtml = '';
+                if (prevEntry) {
+                    const diff = +(entry.weight - prevEntry.weight).toFixed(1);
+                    if (diff < 0) {
+                        diffHtml = `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">${diff.toFixed(1)} kg</span>`;
+                    } else if (diff > 0) {
+                        diffHtml = `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">+${diff.toFixed(1)} kg</span>`;
+                    } else {
+                        diffHtml = `<span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-ios-elevatedDark text-slate-500">0.0 kg</span>`;
+                    }
+                } else {
+                    diffHtml = `<span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-ios-blue dark:bg-blue-950/60">Inizio</span>`;
+                }
+
+                const bmi = calculateBMI(entry.weight, appState.profile.height);
+                const mUnit = entry.muscleUnit || '%';
+
+                return `
+                    <div class="p-4 rounded-2xl bg-slate-50/80 hover:bg-slate-100/80 dark:bg-ios-elevatedDark/60 dark:hover:bg-ios-elevatedDark border border-slate-200/50 dark:border-slate-800/80 transition flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                        <!-- Colonna Sinistra: Data, Peso e Variazione -->
+                        <div class="flex items-center justify-between lg:justify-start gap-4">
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="text-lg font-extrabold text-slate-900 dark:text-white">${entry.weight.toFixed(1)} kg</span>
+                                    ${diffHtml}
+                                </div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                    <i data-lucide="calendar" class="w-3 h-3"></i>
+                                    <span class="capitalize">${formattedDate}</span>
+                                    <span>•</span>
+                                    <span>${formattedTime}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Colonna Centrale: Pillole Composizione Corporea + Metabolismo -->
+                        <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                            <span class="text-xs font-medium px-2.5 py-1 rounded-xl bg-white dark:bg-ios-cardDark border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
+                                BMI: <strong class="text-ios-purple">${bmi ? bmi.toFixed(1) : '--'}</strong>
+                            </span>
+                            ${entry.bmr ? `
+                                <span class="text-xs font-medium px-2.5 py-1 rounded-xl bg-white dark:bg-ios-cardDark border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
+                                    Metab: <strong class="text-amber-500">${Math.round(Number(entry.bmr))} kcal</strong>
+                                </span>` : ''}
+                            ${entry.fat ? `
+                                <span class="text-xs font-medium px-2.5 py-1 rounded-xl bg-white dark:bg-ios-cardDark border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
+                                    Grasso: <strong class="text-ios-orange">${Number(entry.fat).toFixed(1)}%</strong>
+                                </span>` : ''}
+                            ${entry.muscle ? `
+                                <span class="text-xs font-medium px-2.5 py-1 rounded-xl bg-white dark:bg-ios-cardDark border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
+                                    Muscoli: <strong class="text-ios-green">${Number(entry.muscle).toFixed(1)}${mUnit}</strong>
+                                </span>` : ''}
+                            ${entry.water ? `
+                                <span class="text-xs font-medium px-2.5 py-1 rounded-xl bg-white dark:bg-ios-cardDark border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
+                                    Acqua: <strong class="text-ios-teal">${Number(entry.water).toFixed(1)}%</strong>
+                                </span>` : ''}
+                            ${entry.bone ? `
+                                <span class="text-xs font-medium px-2.5 py-1 rounded-xl bg-white dark:bg-ios-cardDark border border-slate-200/60 dark:border-slate-700/60 text-slate-700 dark:text-slate-300">
+                                    Ossa: <strong>${Number(entry.bone).toFixed(1)} kg</strong>
+                                </span>` : ''}
+                        </div>
+
+                        <!-- Colonna Destra: Note e Azioni -->
+                        <div class="flex items-center justify-between lg:justify-end gap-3 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-200/60 dark:border-slate-700/60">
+                            <span class="text-xs italic text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
+                                ${entry.notes ? `"${escapeHtml(entry.notes)}"` : ''}
+                            </span>
+                            <div class="flex items-center gap-1.5 shrink-0">
+                                <button onclick="editEntry('${entry.id}')" title="Modifica" class="p-2 rounded-xl bg-white dark:bg-ios-cardDark hover:bg-blue-50 dark:hover:bg-blue-950/50 text-slate-600 dark:text-slate-300 hover:text-ios-blue border border-slate-200/60 dark:border-slate-700/60 transition">
+                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                </button>
+                                <button onclick="confirmDeleteEntry('${entry.id}')" title="Elimina" class="p-2 rounded-xl bg-white dark:bg-ios-cardDark hover:bg-red-50 dark:hover:bg-red-950/50 text-slate-600 dark:text-slate-300 hover:text-ios-red border border-slate-200/60 dark:border-slate-700/60 transition">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // =====================================================================
+        // GESTIONE MODALE INSERIMENTO / MODIFICA MISURAZIONE
+        // =====================================================================
+        function getLocalDateTimeString(dateObj = new Date()) {
+            const pad = n => String(n).padStart(2, '0');
+            return `${dateObj.getFullYear()}-${pad(dateObj.getMonth() + 1)}-${pad(dateObj.getDate())}T${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
+        }
+
+        function openEntryModal(entryToEdit = null) {
+            const modal = document.getElementById('entryModal');
+            const title = document.getElementById('entryModalTitle');
+            document.getElementById('liveBmiHeightRef').textContent = `su ${appState.profile.height} cm`;
+
+            if (entryToEdit) {
+                title.textContent = 'Modifica Misurazione';
+                document.getElementById('entryId').value = entryToEdit.id;
+                document.getElementById('entryDate').value = getLocalDateTimeString(new Date(entryToEdit.date));
+                document.getElementById('entryWeight').value = entryToEdit.weight;
+                document.getElementById('entryBmr').value = entryToEdit.bmr ?? '';
+                document.getElementById('entryFat').value = entryToEdit.fat ?? '';
+                document.getElementById('entryWater').value = entryToEdit.water ?? '';
+                document.getElementById('entryMuscle').value = entryToEdit.muscle ?? '';
+                setMuscleInputUnit(entryToEdit.muscleUnit || '%');
+                document.getElementById('entryBone').value = entryToEdit.bone ?? '';
+                document.getElementById('entryNotes').value = entryToEdit.notes ?? '';
+            } else {
+                title.textContent = 'Nuova Misurazione';
+                document.getElementById('entryForm').reset();
+                document.getElementById('entryId').value = '';
+                document.getElementById('entryDate').value = getLocalDateTimeString(new Date());
+                setMuscleInputUnit('%');
+            }
+
+            updateLiveBmiPreview();
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeEntryModal() {
+            document.getElementById('entryModal').classList.add('hidden');
+        }
+
+        function setMuscleInputUnit(unit) {
+            appState.muscleInputUnit = unit;
+            document.getElementById('muscleInputUnitLabel').textContent = unit;
+            const btnPct = document.getElementById('unitBtnPercent');
+            const btnKg = document.getElementById('unitBtnKg');
+            const input = document.getElementById('entryMuscle');
+
+            if (unit === '%') {
+                btnPct.className = 'px-1.5 py-0.5 rounded bg-white dark:bg-ios-cardDark text-ios-green shadow-xs';
+                btnKg.className = 'px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-300';
+                input.placeholder = 'es. 41.0';
+            } else {
+                btnKg.className = 'px-1.5 py-0.5 rounded bg-white dark:bg-ios-cardDark text-ios-green shadow-xs';
+                btnPct.className = 'px-1.5 py-0.5 rounded text-slate-500 dark:text-slate-300';
+                input.placeholder = 'es. 56.5';
+            }
+        }
+
+        function updateLiveBmiPreview() {
+            const weightVal = parseFloat(document.getElementById('entryWeight').value);
+            const bmiValEl = document.getElementById('liveBmiValue');
+            const bmiCatEl = document.getElementById('liveBmiCategory');
+
+            if (!weightVal || weightVal <= 0) {
+                bmiValEl.textContent = '--.-';
+                bmiCatEl.textContent = '--';
+                bmiCatEl.className = 'text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300';
+                return;
+            }
+
+            const bmi = calculateBMI(weightVal, appState.profile.height);
+            const cat = getBMICategory(bmi);
+            bmiValEl.textContent = bmi.toFixed(1);
+            bmiCatEl.textContent = cat.label;
+            bmiCatEl.className = `text-[11px] font-bold px-2 py-0.5 rounded-full ${cat.classes}`;
+        }
+
+        function appendNoteTag(tag) {
+            const input = document.getElementById('entryNotes');
+            const current = input.value.trim();
+            if (!current) {
+                input.value = tag;
+            } else if (!current.includes(tag)) {
+                input.value = `${current}, ${tag}`;
+            }
+        }
+
+        function saveEntry(event) {
+            event.preventDefault();
+            const id = document.getElementById('entryId').value;
+            const dateStr = document.getElementById('entryDate').value;
+            const weight = parseFloat(document.getElementById('entryWeight').value);
+            const bmrRaw = document.getElementById('entryBmr').value;
+            const fatRaw = document.getElementById('entryFat').value;
+            const waterRaw = document.getElementById('entryWater').value;
+            const muscleRaw = document.getElementById('entryMuscle').value;
+            const boneRaw = document.getElementById('entryBone').value;
+            const notes = document.getElementById('entryNotes').value.trim();
+
+            if (!weight || isNaN(weight)) {
+                showToast('Inserisci un valore valido per il peso', 'error');
+                return;
+            }
+
+            const entryObj = {
+                id: id || 'bt_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                date: new Date(dateStr).toISOString(),
+                weight: +weight.toFixed(1),
+                bmr: bmrRaw !== '' ? Math.round(parseFloat(bmrRaw)) : null,
+                fat: fatRaw !== '' ? +parseFloat(fatRaw).toFixed(1) : null,
+                water: waterRaw !== '' ? +parseFloat(waterRaw).toFixed(1) : null,
+                muscle: muscleRaw !== '' ? +parseFloat(muscleRaw).toFixed(1) : null,
+                muscleUnit: appState.muscleInputUnit,
+                bone: boneRaw !== '' ? +parseFloat(boneRaw).toFixed(1) : null,
+                notes: notes
+            };
+
+            if (id) {
+                const idx = appState.entries.findIndex(e => e.id === id);
+                if (idx !== -1) appState.entries[idx] = entryObj;
+                showToast('Misurazione aggiornata!');
+            } else {
+                appState.entries.unshift(entryObj);
+                showToast('Misurazione salvata!');
+            }
+
+            saveToStorage();
+            closeEntryModal();
+            renderAll();
+        }
+
+        function editEntry(id) {
+            const found = appState.entries.find(e => e.id === id);
+            if (found) openEntryModal(found);
+        }
+
+        function confirmDeleteEntry(id) {
+            openConfirmModal(
+                'Elimina misurazione',
+                'Vuoi eliminare definitivamente questa voce dallo storico?',
+                () => {
+                    appState.entries = appState.entries.filter(e => e.id !== id);
+                    saveToStorage();
+                    renderAll();
+                    showToast('Misurazione eliminata');
+                }
+            );
+        }
+
+        // =====================================================================
+        // PROFILO UTENTE (CON OBIETTIVO OPZIONALE)
+        // =====================================================================
+        function openProfileModal() {
+            document.getElementById('profileName').value = appState.profile.name;
+            document.getElementById('profileHeight').value = appState.profile.height;
+            document.getElementById('profileTargetWeight').value = (appState.profile.targetWeight !== null && appState.profile.targetWeight !== undefined)
+                ? appState.profile.targetWeight
+                : '';
+            document.getElementById('profileModal').classList.remove('hidden');
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').classList.add('hidden');
+        }
+
+        function clearTargetWeightInput() {
+            document.getElementById('profileTargetWeight').value = '';
+        }
+
+        function saveProfile(event) {
+            event.preventDefault();
+            const name = document.getElementById('profileName').value.trim() || 'Utente';
+            const height = parseInt(document.getElementById('profileHeight').value, 10);
+            const targetRaw = document.getElementById('profileTargetWeight').value.trim();
+            const parsedTarget = targetRaw !== '' ? parseFloat(targetRaw) : null;
+
+            appState.profile = {
+                name,
+                height: height || 172,
+                targetWeight: (parsedTarget !== null && !isNaN(parsedTarget) && parsedTarget > 0) ? +parsedTarget.toFixed(1) : null
+            };
+
+            saveToStorage();
+            closeProfileModal();
+            renderAll();
+            showToast('Impostazioni salvate');
+        }
+
+        // =====================================================================
+        // BACKUP, ESPORTAZIONE (JSON/CSV) E IMPORTAZIONE
+        // =====================================================================
+        function openBackupModal() {
+            document.getElementById('backupModal').classList.remove('hidden');
+        }
+
+        function closeBackupModal() {
+            document.getElementById('backupModal').classList.add('hidden');
+        }
+
+        function exportJSON() {
+            const payload = {
+                app: 'BodyTrack Pro',
+                exportedAt: new Date().toISOString(),
+                profile: appState.profile,
+                entries: appState.entries
+            };
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+            const dateTag = new Date().toISOString().slice(0, 10);
+            triggerDownload(blob, `BodyTrackPro_Backup_${dateTag}.json`);
+            showToast('Backup JSON scaricato');
+        }
+
+        function exportCSV() {
+            if (appState.entries.length === 0) {
+                showToast('Nessun dato da esportare in CSV', 'error');
+                return;
+            }
+            const headers = ['Data', 'Ora', 'Peso (kg)', 'BMI', 'Metabolismo (kcal)', 'Massa Grassa (%)', 'Massa Muscolare', 'Unita Muscoli', 'Acqua Corporea (%)', 'Massa Ossea (kg)', 'Note'];
+            const rows = appState.entries.map(e => {
+                const d = new Date(e.date);
+                const dateStr = d.toLocaleDateString('it-IT');
+                const timeStr = d.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                const bmi = calculateBMI(e.weight, appState.profile.height) || '';
+                const safeNotes = `"${(e.notes || '').replace(/"/g, '""')}"`;
+                return [
+                    dateStr,
+                    timeStr,
+                    e.weight,
+                    bmi,
+                    e.bmr ?? '',
+                    e.fat ?? '',
+                    e.muscle ?? '',
+                    e.muscleUnit || '%',
+                    e.water ?? '',
+                    e.bone ?? '',
+                    safeNotes
+                ].join(';');
+            });
+
+            const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const dateTag = new Date().toISOString().slice(0, 10);
+            triggerDownload(blob, `BodyTrackPro_Storico_${dateTag}.csv`);
+            showToast('File CSV esportato');
+        }
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function importJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (!parsed || !Array.isArray(parsed.entries)) {
+                        throw new Error('Formato file non valido');
+                    }
+
+                    if (parsed.profile) {
+                        appState.profile = {
+                            ...appState.profile,
+                            ...parsed.profile,
+                            targetWeight: (parsed.profile.targetWeight !== undefined && parsed.profile.targetWeight !== '' && parsed.profile.targetWeight !== null)
+                                ? Number(parsed.profile.targetWeight)
+                                : null
+                        };
+                    }
+
+                    const existingIds = new Set(appState.entries.map(item => item.id));
+                    let addedCount = 0;
+                    parsed.entries.forEach(item => {
+                        if (item && typeof item.weight === 'number' && item.date) {
+                            if (!existingIds.has(item.id)) {
+                                appState.entries.push(item);
+                                addedCount++;
+                            }
+                        }
+                    });
+
+                    saveToStorage();
+                    renderAll();
+                    closeBackupModal();
+                    showToast(`Importate ${addedCount} misurazioni!`);
+                } catch (err) {
+                    console.error(err);
+                    showToast('File JSON non valido o corrotto', 'error');
+                } finally {
+                    event.target.value = '';
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // =====================================================================
+        // DATI DEMO E AZZERAMENTO
+        // =====================================================================
+        function loadDemoData() {
+            const now = Date.now();
+            const dayMs = 24 * 60 * 60 * 1000;
+
+            const sampleEntries = [
+                { daysAgo: 28, weight: 78.6, bmr: 1710, fat: 20.4, muscle: 39.8, water: 56.5, bone: 3.1, notes: 'Inizio - A digiuno' },
+                { daysAgo: 24, weight: 78.1, bmr: 1705, fat: 20.1, muscle: 40.0, water: 56.8, bone: 3.1, notes: 'A digiuno' },
+                { daysAgo: 20, weight: 77.8, bmr: 1702, fat: 19.8, muscle: 40.2, water: 57.1, bone: 3.1, notes: 'Post-allenamento' },
+                { daysAgo: 15, weight: 77.2, bmr: 1698, fat: 19.3, muscle: 40.5, water: 57.4, bone: 3.2, notes: 'A digiuno' },
+                { daysAgo: 10, weight: 76.9, bmr: 1695, fat: 19.0, muscle: 40.7, water: 57.6, bone: 3.2, notes: 'Mattina' },
+                { daysAgo: 5,  weight: 76.3, bmr: 1690, fat: 18.6, muscle: 41.0, water: 58.0, bone: 3.2, notes: 'A digiuno' },
+                { daysAgo: 1,  weight: 75.9, bmr: 1688, fat: 18.2, muscle: 41.3, water: 58.3, bone: 3.2, notes: 'Ottima idratazione' }
+            ];
+
+            appState.entries = sampleEntries.map((s, i) => ({
+                id: 'demo_' + i + '_' + now,
+                date: new Date(now - s.daysAgo * dayMs).toISOString(),
+                weight: s.weight,
+                bmr: s.bmr,
+                fat: s.fat,
+                muscle: s.muscle,
+                muscleUnit: '%',
+                water: s.water,
+                bone: s.bone,
+                notes: s.notes
+            }));
+
+            saveToStorage();
+            renderAll();
+            showToast('Dati dimostrativi caricati!');
+        }
+
+        function openConfirmClearModal() {
+            if (appState.entries.length === 0) {
+                showToast('Lo storico è già vuoto');
+                return;
+            }
+            openConfirmModal(
+                'Azzerare tutto lo storico?',
+                'Tutte le misurazioni salvate sul dispositivo verranno eliminate. Esporta prima un backup JSON se vuoi conservarle.',
+                () => {
+                    appState.entries = [];
+                    saveToStorage();
+                    renderAll();
+                    showToast('Storico completamente azzerato');
+                }
+            );
+        }
+
+        // =====================================================================
+        // MODALE CONFERMA E TOAST
+        // =====================================================================
+        function openConfirmModal(title, desc, onConfirmCallback) {
+            document.getElementById('confirmModalTitle').textContent = title;
+            document.getElementById('confirmModalDesc').textContent = desc;
+            const actionBtn = document.getElementById('confirmModalActionBtn');
+            actionBtn.onclick = () => {
+                closeConfirmModal();
+                onConfirmCallback();
+            };
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgClass = type === 'error'
+                ? 'bg-red-600 text-white'
+                : 'bg-slate-900 dark:bg-white text-white dark:text-slate-900';
+
+            toast.className = `toast-enter px-4 py-2.5 rounded-full shadow-xl text-xs font-semibold flex items-center gap-2 ${bgClass}`;
+            toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+            container.innerHTML = '';
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.25s ease';
+                setTimeout(() => toast.remove(), 250);
+            }, 2800);
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
